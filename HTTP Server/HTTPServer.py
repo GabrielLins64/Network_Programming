@@ -32,6 +32,10 @@ while(True):
 
     try:
         msg = connection_socket.recv(buffer_size).decode()
+        print(msg)
+        if(msg==""):
+            connection_socket.close()
+            continue
         requested_file = msg.split()[1]
         if(requested_file=='/'): requested_file = '/index.html'
         file = open(requested_file[1:], 'r')
@@ -41,11 +45,16 @@ while(True):
         HTTP_response = "HTTP/1.1 200 OK\n"
         HTTP_response += "Content-Type: text/html\n"
         HTTP_response += "Connection: Closed\r\n"
-        connection_socket.send(HTTP_response.encode())
-        connection_socket.send("\r\n".encode())
-        for line in data:
-            connection_socket.send(line.encode())
-        connection_socket.send("\r\n".encode())
+        try:
+            connection_socket.send(HTTP_response.encode())
+            connection_socket.send("\r\n".encode())
+            for line in data:
+                connection_socket.send(line.encode())
+            connection_socket.send("\r\n".encode())
+        except BrokenPipeError:
+            print("Connection could not be stablished with:", addr)
+            connection_socket.close()
+            continue
     
     except IOError:
         file = open("notfound.html", "r")
